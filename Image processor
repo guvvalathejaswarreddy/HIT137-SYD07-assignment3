@@ -33,3 +33,30 @@ class ImageProcessorApp:
         self.start_x = self.start_y = self.end_x = self.end_y = None  # Selection coordinates
         self.rect_id = None  # Rectangle selection ID
         self.processed_image = None  # Processed (blurred) image
+# Bind mouse events for cropping functionality
+        self.canvas.bind("<ButtonPress-1>", self.on_mouse_press)
+        self.canvas.bind("<B1-Motion>", self.on_mouse_drag)
+        self.canvas.bind("<ButtonRelease-1>", self.on_mouse_release)
+
+    def load_image(self):
+        """Loads an image from the file system and displays it."""
+        file_path = filedialog.askopenfilename(filetypes=[("Image Files", ".jpg;.png;*.bmp")])
+        if not file_path:
+            return
+
+        self.original_image = cv2.imread(file_path)  # Load image using OpenCV
+        self.processed_image = self.original_image.copy()  # Keep a copy for processing
+        self.display_image()
+
+    def display_image(self, img=None):
+        """Displays the image on the canvas."""
+        if img is None:
+            img = self.processed_image
+
+        if img is None:
+            return
+
+        # Convert OpenCV image (BGR) to Tkinter-compatible format (RGB)
+        image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        image = Image.fromarray(image)
+        image.thumbnail((400, 400))  # Resize image for display

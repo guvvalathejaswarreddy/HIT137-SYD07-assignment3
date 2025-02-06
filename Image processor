@@ -1,1 +1,35 @@
+import tkinter as tk
+from tkinter import filedialog, messagebox
+import cv2
+from PIL import Image, ImageTk
+import numpy as np
 
+class ImageProcessorApp:
+    def _init_(self, root):
+        self.root = root
+        self.root.title("Image Processor")
+
+        # Button to load an image
+        self.load_button = tk.Button(root, text="Load Image", command=self.load_image)
+        self.load_button.pack()
+
+        # Canvas for displaying the image
+        self.canvas = tk.Canvas(root, cursor="cross")  
+        self.canvas.pack(fill=tk.BOTH, expand=True)
+
+        # Slider to control blur intensity
+        self.slider = tk.Scale(root, from_=1, to=100, orient=tk.HORIZONTAL,
+                               label="Blur Intensity", command=self.update_blur)
+        self.slider.pack()
+
+        # Button to save the processed image
+        self.save_button = tk.Button(root, text="Save Image", command=self.save_image)
+        self.save_button.pack()
+
+        # Variables to store image data
+        self.original_image = None  # Original image loaded
+        self.cropped_image = None  # Cropped image before processing
+        self.tk_image = None  # Tkinter-compatible image for display
+        self.start_x = self.start_y = self.end_x = self.end_y = None  # Selection coordinates
+        self.rect_id = None  # Rectangle selection ID
+        self.processed_image = None  # Processed (blurred) image

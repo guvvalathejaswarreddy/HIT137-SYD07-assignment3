@@ -60,3 +60,74 @@ class ImageProcessorApp:
         image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(image)
         image.thumbnail((400, 400))  # Resize image for display
+        self.tk_image = ImageTk.PhotoImage(image)
+        self.canvas.create_image(0, 0, anchor=tk.NW, image=self.tk_image)
+
+    def on_mouse_press(self, event):
+        """Records the starting point of the cropping selection."""
+        self.start_x, self.start_y = event.x, event.y
+        self.rect_id = self.canvas.create_rectangle(self.start_x, self.start_y,
+                                                    self.start_x, self.start_y,
+                                                    outline="red")
+
+    def on_mouse_drag(self, event):
+        """Updates the selection rectangle dynamically as the user drags the mouse."""
+        self.end_x, self.end_y = event.x, event.y
+        self.canvas.coords(self.rect_id, self.start_x, self.start_y, self.end_x, self.end_y)
+
+    def on_mouse_release(self, event):
+        """Crops the selected area from the image."""
+        if self.original_image is None:
+            return
+
+        # Ensure correct coordinates
+        x1, x2 = sorted([self.start_x, self.end_x])
+        y1, y2 = sorted([self.start_y, self.end_y])
+
+        # Get canvas and image dimensions for coordinate conversion
+        canvas_width, canvas_height = self.canvas.winfo_width(), self.canvas.winfo_height()
+        img_height, img_width = self.original_image.shape[:2]
+
+        scale_x = img_width / canvas_width
+        scale_y = img_height / canvas_height
+# Convert to actual image coordinates
+        x1, x2 = int(x1 * scale_x), int(x2 * scale_x)
+        y1, y2 = int(y1 * scale_y), int(y2 * scale_y)
+
+        # Crop the selected region
+        self.cropped_image = self.original_image[y1:y2, x1:x2]
+        self.processed_image = self.cropped_image.copy()
+        self.display_image(self.processed_image)
+
+    def update_blur(self, value):
+        """Applies blur effect to the cropped image."""
+        if self.cropped_image is None:
+            return
+
+        blur_value = int(value)
+        if blur_value % 2 == 0:  # Gaussian blur requires odd kernel size
+            blur_value += 1
+
+        # Apply Gaussian blur
+        blurred_image = cv2.GaussianBlur(self.cropped_image, (blur_value, blur_value), 0)
+        self.processed_image = blurred_image
+        self.display_image(self.processed_image)
+
+    def save_image(self):
+        """Saves the processed image to the file system."""
+        if self.processed_image is None:
+            messagebox.showerror("Error", "No image to save!")
+            return
+
+        file_path = filedialog.asksaveasfilename(defaultextension=".png",
+                                                 filetypes=[("PNG Files", "*.png"),
+                                                            ("JPEG Files", "*.jpg"),
+                                                            ("Bitmap Files", "*.bmp")])
+        if file_path:
+            cv2.imwrite(file_path, self.processed_image)  # Save using OpenCV
+            messagebox.showinfo("Saved", "Image saved successfully!")
+
+if name == "main":
+    root = tk.Tk()
+    app = ImageProcessorApp(root)
+    root.mainloop()
